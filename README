@@ -6,12 +6,8 @@ Install Everything
 ====================
 
 Debian:
-  sudo apt-get install ruby
-  sudo apt-get install libopenssl-ruby
-  sudo apt-get install postgresql-server postgresql-client
-  sudo apt-get install libpq-dev
-  sudo apt-get install libusb-dev
   Make sure you have Rubygems 1.3.7 installed (use the one from rubygems.org NOT the Debian one)
+  Run the ./linux_dependencies.sh script (after reviewing, of course)
 
 Mac:
   Install MacPorts
@@ -20,17 +16,18 @@ Mac:
   sudo port install libusb-legacy (compat?)
   Make sure you have RubyGems 1.3.7 or later
 
-Set up the Database
-===================
-
-  createdb radiator_development
-  createuser radiator -P (use "radiator" as the password)
-
 Setup Project
 ===================
 
   sudo gem install bundler
   bundle install 
+
+Set up the Database
+===================
+
+  sudo su - postgres (as needed)
+  createdb radiator_production
+  createuser radiator -P (use "radiator" as the password)
 
 Run Migrations
 ===================
@@ -40,23 +37,41 @@ Run Migrations
 Running It
 ====================
 
+  Plug in the betabrite
+
   # Start up the server (creates jobs)
-  RAILS_ENV=production script/rails server
-  Go to http://localhost:3000/admin for the Typus interface.
+  ./script/start_radiator
 
   # To run the workers that run on the jobs
-  sudo RAILS_ENV=production rake jobs:work
+  ./script/start_delayed_job
+
+Admin
+====================
+
+  Go to http://localhost:3000/admin for the Typus interface.
 
 Extending It
 ====================
 
-The core of Radiator is the messages table.  Anything in the messages table gets read according to what has been last displayed, so that the oldest messages get shown first.  
+The core of Radiator is the messages table.  Anything in the messages table gets read
+according to what has been last displayed, so that the oldest messages get shown first.
 
-Messages get created by message sources.  Currently, there is only one message source, which queries Toodledo (an online todo service) and creates new messages from it.  However, Radiator does not care where messages come from and you can add your own messages in Typus.
+Messages get created by message sources.  Currently, there is only one message source,
+which queries Toodledo (an online todo service) and creates new messages from it.
+However, Radiator does not care where messages come from and you can add your own
+messages in Typus.
 
-The BetaBriteUpdater class is responsible for talking to the USB display and getting new messages.  This class uses rufus-scheduler to update the display (which is done every 5 seconds) and call the datasources for new messages (every minute).  The BetabriteUpdater will clear the table every time it updates for new messages, but it does not "blank" the Betabrite display.  This means that if there are no new messages, the last displayed message just keeps displaying until a new one does appear.  It then creates jobs that are picked up by the worker process running in the background -- this prevents long running processes from locking up the web server.
+The BetaBriteUpdater class is responsible for talking to the USB display and getting new
+ messages.  This class uses rufus-scheduler to update the display (which is done every 5
+ seconds) and call the datasources for new messages (every minute).  The BetabriteUpdater
+ will clear the table every time it updates for new messages, but it does not "blank" the
+ Betabrite display.  This means that if there are no new messages, the last displayed message
+ just keeps displaying until a new one does appear.  It then creates jobs that are picked up by
+ the worker process running in the background -- this prevents long running processes from
+ locking up the web server.
 
-There is a scaffold for messages that can be used as a REST API, so /messages.xml will give you what you expect.
+There is a scaffold for messages that can be used as a REST API, so /messages.xml will give
+you what you expect.
 
 Device Compatibility
 ====================
